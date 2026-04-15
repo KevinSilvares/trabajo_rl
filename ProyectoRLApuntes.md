@@ -33,9 +33,9 @@ class ArcadeMazeEnv(gym.Env):
 
 Al heredar de `gym.Env` se deben implementar unos métodos específicos.
 
-#### `__init__()`
-
 Constructor. En él se definen las reglas del entorno y el modo de renderizado.
+
+#### `__init__()`
 
 ```python
 def __init__(self, render_mode=None):
@@ -306,7 +306,7 @@ La fórmula se explica:
 2. Lo multiplicamos por nuestro radio para hacer la distancia tan grande como queramos.
 3. Sumamos la posición del centro en el eje correspondiente para que el punto se dibuje en el eje cartesiano.
 
-### Ejemplo completo de generación de pista base
+#### Ejemplo completo de generación de pista base
 
 Con este código se genera una pista base (que es un círculo deformado de forma aleatoria en sus vértices) donde se marca en color verde el exterior (hierba), en gris el interior (asfalto) y los vértices se marcan en rojo.
 
@@ -394,6 +394,55 @@ if __name__ == "__main__":
         # Limitamos el bucle a 10 FPS para que tu procesador no se ponga al 100%
         clock.tick(10)
 ```
+
+### Generación de pista suavizada
+
+Partiendo de la base anterior, se aplica una interpolación entre los puntos que definen las curvas (vértices) de la pista. Esta técnica consiste en aplicar un spline o curvas matemáticas a la pista base (se recomienda buscar spline matemático). La idea es crear puntos entre los puntos ya existentes para suavizar las formas.
+
+Para realizarlo se usa la librería `scipy` y dos funciones: `splprep` y `splev`.
+
+```python
+from scipy.interpolate import splprep, splev
+```
+
+El flujo es el siguiente:
+
+#### `splprep`
+
+Esta función crea el “plano” que utilizará la siguiente para poder dibujar los puntos:
+
+```python
+tck, u = splprep([puntos_x, puntos_y], s = 0, per = True)
+```
+
+**Argumentos:**
+
+- Lista de puntos: Puntos (generados anteriormente) en x e y en una lista.
+- `s`: smoothing. Controla cuanto de suave van a ser los puntos. Al contrario de lo que dice la lógica, realmente controla cuanto se puede desviar la curva que se va a crear de los puntos base. Al definirlo a 0 se le obliga a que la curva pase por todos los puntos definidos en la pista base.
+- `per`: periódico. Indica si es una curva cerrada (`True`) o no (`False`).
+
+**Devuelve:**
+
+- `tck`: Una tupla que contiene todos los nodos, coeficientes y grado de la ecuación que deberá aplicarse después. En esencia, la configuración que necesitará `splev` después para poder aplicar la transformación. (No es necesario entender cada cosa que contiene este dato, sólo que tiene todas las matemáticas necesarias para aplicarse después por la otra función).
+- `u`: Valores paramétricos originales (el porcentaje de recorrido original, no deberíamos usarlos).
+
+El siguiente paso es espaciar los puntos. Cuantos más puntos haya disponibles más resolución tendrá la pista.
+
+La letra `u` representa el porcentaje de recorrido realizado a lo largo de la curva.
+
+```python
+u_nuevo = np.linspace(0, 1, 100)
+```
+
+#### `splev`
+
+Esta función aplica la transformación matemática sobre los valores paramétricos correspondientes (`u_nuevo`) con los parámetros almacenados en `tck`.
+
+```python
+puntos_suaves_x, puntos_suaves_y = splev(u_nuevo, tck)
+```
+
+Esta función evalúa cada punto de `u_nuevo` (el porcentaje recorrido) y calcula exactamente sus coordenadas cartesianas (x, y) en pantalla para ese punto concreto. Se devolverán tantas coordenadas x, y como puntos haya en `u_nuevo`.
 
 ### Recursos
 

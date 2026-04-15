@@ -1,6 +1,8 @@
 import math
 import random
 import pygame
+from scipy.interpolate import splprep, splev
+import numpy as np
 
 def generate_base_track(x_center, y_center, num_points = 15, base_radius = 150):
     points = []
@@ -24,7 +26,7 @@ def generate_base_track(x_center, y_center, num_points = 15, base_radius = 150):
     
     return points
 
-def draw_track(points, window_size = 800):
+def draw_track(points, window_size = 800, draw_control_points = False):
     pygame.init()
     pygame.display.init()
 
@@ -52,23 +54,62 @@ def draw_track(points, window_size = 800):
         3
     )
 
-    # Dibujar puntos sobre los vértices (debugging)
-    for point in points:
-        # Es necesario trabajar en número enteros y no en decimales (cada entero es un píxel)
-        coord_x = int(point[0])
-        coord_y = int(point[1])
+    if draw_control_points:
+        # Dibujar puntos sobre los vértices (debugging)
+        for point in points:
+            # Es necesario trabajar en número enteros y no en decimales (cada entero es un píxel)
+            coord_x = int(point[0])
+            coord_y = int(point[1])
 
-        pygame.draw.circle(window, (255, 0, 0), (coord_x, coord_y), 6)
+            pygame.draw.circle(window, (255, 0, 0), (coord_x, coord_y), 6)
 
     pygame.event.pump()
     pygame.display.update()
     clock.tick(1)
 
+def generate_smooth_track(x_center, y_center, num_points = 15, base_radius = 150):
+    points_x = []
+    points_y = []
+
+    angle_dist = (2 * math.pi) / num_points
+
+    for i in range(num_points):
+        angle = i * angle_dist
+
+        noise = random.uniform(-0.4, 0.4)
+        current_radius = base_radius * (1 + noise)
+
+        x = x_center + (math.cos(angle) * current_radius)
+        y = y_center + (math.sin(angle) * current_radius)
+
+        points_x.append(x)
+        points_y.append(y)
+
+    # Para que el circuito se cierre perfectamente tenemos que duplicar el primer punto al final de la lista
+    points_x.append(points_x[0])
+    points_y.append(points_y[0])
+
+    # SUAVIZADO
+    # s=0 significa que obligamos a la curva a pasar EXACTAMENTE por nuestros puntos
+    # per=True le dice que es un circuito cerrado (periódico)
+    tck, u = splprep([points_x, points_y], s = 0, per = True)
+
+    # splev genera los nuevos puntos. 
+    # np.linspace(0, 1, 100) crea 100 puntos a lo largo de esa curva.
+    u_nuevo = np.linspace(0, 1, 100)
+    smooth_points_x, smooth_points_y = splev(u_nuevo, tck)
+        
+    # Combinamos las X y las Y de nuevo en una lista de tuplas para Pygame
+    track = list(zip(smooth_points_x, smooth_points_y))
+
+    return track
+    
 if __name__ == "__main__":
     ventana_abierta = True
     clock = pygame.time.Clock()
 
-    draw_track(generate_base_track(400, 400))
+    # draw_track(generate_base_track(400, 400))
+    draw_track(generate_smooth_track(400, 400, 20))
 
     while ventana_abierta:
         # Capturamos todo lo que el usuario hace (teclado, ratón, etc.)

@@ -444,6 +444,88 @@ puntos_suaves_x, puntos_suaves_y = splev(u_nuevo, tck)
 
 Esta función evalúa cada punto de `u_nuevo` (el porcentaje recorrido) y calcula exactamente sus coordenadas cartesianas (x, y) en pantalla para ese punto concreto. Se devolverán tantas coordenadas x, y como puntos haya en `u_nuevo`.
 
+### Generar una pista suave con interior y exterior
+
+No es suficiente con crear un mismo polígono y hacerlo más pequeño porque las coordenadas tendrían un offset (como una compensación) desde las coordenadas originales a las actuales y teniendo en cuenta la nueva escala.
+
+La idea para generar una pista con interior e interior es partir de la base anterior para generar pistas suaves y usarla como puntos centrales para extruir a ambos lados.
+
+1. Recorrer la lista de puntos que compone la pista.
+2. Centrarnos en el punto A y el punto B. Formarán un vector (x, y) → (p1, p2).
+3. Calcular la tangente del vector anterior. Formarán otro vector (dx, dy).
+4. Normalizar la tangente para que mida 1 píxel siempre.
+5. Obtener la normal de la tangente (básicamente girar la flecha a donde apunta la tangente para extruir a ambos lados).
+6. Extruir (sumar la distancia) desde el punto central a cada lado con el ancho que viene como parámetro. Como partimos del centro, sumamos la mitad del ancho en una dirección y la otra mitad en la otra dirección.
+
+```python
+# resto del código anterior
+for i in range(num_track_points):
+        # Miramos el punto A (p1) y el punto B (p2)
+        p1 = center_points[i]
+        p2 = center_points[(i + 1) % num_track_points] # el % es para cerrar el círculo al final
+
+        # Tangente
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
+
+        # Normalizar la tangente para que mida 1
+        dist = math.hypot(dx, dy)
+        if dist == 0: # puede llegar a dividir entre 0 y petaria
+            dist = 1
+        
+        dx /= dist
+        dy /= dist
+
+        # Sacar la normal (girarlo 90º)
+        nx = -dy
+        ny = dx
+
+        # Extruir
+        # Borde interior
+        half_width = width / 2
+
+        interior.append((p1[0] + (nx * half_width), p1[1] + (ny * half_width)))
+        exterior.append((p1[0] - (nx * half_width), p1[1] - (ny * half_width)))
+```
+
+Como aclaración: La idea es coger un punto central y fijarnos en el siguiente y obtener su tangente. La tangente es la dirección a la que apunta el vector formado por estos dos puntos. Al normalizarla obtenemos siempre una tangente de mismo valor; 1 píxel (de no hacerlo se obtendrían tangentes con muchos valores diferentes y no sería manejable). Luego giramos dicha flecha 90º y le sumamos la mitad del ancho a cada dirección.
+
+### Dibujar la pista
+
+El proceso de dibujar la pista es muy similar a los anteriores pero con el matiz de que vamos a dibujar cada casilla o tile en lugar de una línea. Para ello se usa el método `polygon()` de `pygame` con los 4 puntos que forman la casilla.
+
+Los límites de la pista se pueden dibujar como líneas ya que tenemos las listas de puntos interiores y exteriores.
+
+```python
+for i in range(num_points):
+        next = (i + 1) % num_points # el % asegura que se cierre al final
+
+        # Juntar los 4 puntos que forman un tile
+        p1 = interior[i]
+        p2 = exterior[i]
+        p3 = exterior[next]
+        p4 = interior[next]
+
+        # Asfalto
+        pygame.draw.polygon(
+            window,
+            (100, 100, 100),
+            [p1, p2, p3, p4]
+        )
+
+        # Limites
+        pygame.draw.lines(window, (255, 255, 255), True, interior, 3)
+        pygame.draw.lines(window, (255, 255, 255), True, exterior, 3)
+```
+
+Es importante decir que este código no es perfecto y puede dar curvas raras o que se enroscan sobre sí mismas. Por simpleza, la forma de solucionarlo es aumentar el radio base en la generación de los puntos, el número de puntos (curvas) y/o la cantidad del ruido para cada punto. De base son:
+
+- `num_points = 14`
+- `base_radius = 250`
+- `noise = (-0.2, 0.2)`
+
+**Nota:** Si los puntos no se en el orden en el que lo hacen aparecerán como “pajaritas”. El pincel de pygame va esquina por esquina y rellena el interior del polígono, por lo que el orden a la hora de dibujar es importante. En este caso: PuntoA- Interior → PuntoA-Exterior → PuntoB-Exterior → PuntoB-Interior.
+
 ### Recursos
 
 Documentación: [https://gymnasium.farama.org/environments/box2d/car_racing/](https://gymnasium.farama.org/environments/box2d/car_racing/) (Visto 10/04/2026)

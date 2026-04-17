@@ -159,6 +159,7 @@ if __name__ == "__main__":
             
             print(action)
             
+            
             # 3. Aplicamos la acción al entorno
             nueva_obs, recompensa, terminado, truncado, info = env.step(action)
             

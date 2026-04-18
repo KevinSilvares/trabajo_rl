@@ -444,7 +444,7 @@ puntos_suaves_x, puntos_suaves_y = splev(u_nuevo, tck)
 
 Esta función evalúa cada punto de `u_nuevo` (el porcentaje recorrido) y calcula exactamente sus coordenadas cartesianas (x, y) en pantalla para ese punto concreto. Se devolverán tantas coordenadas x, y como puntos haya en `u_nuevo`.
 
-### Generar una pista suave con interior y exterior
+#### Generar una pista suave con interior y exterior
 
 No es suficiente con crear un mismo polígono y hacerlo más pequeño porque las coordenadas tendrían un offset (como una compensación) desde las coordenadas originales a las actuales y teniendo en cuenta la nueva escala.
 
@@ -490,7 +490,7 @@ for i in range(num_track_points):
 
 Como aclaración: La idea es coger un punto central y fijarnos en el siguiente y obtener su tangente. La tangente es la dirección a la que apunta el vector formado por estos dos puntos. Al normalizarla obtenemos siempre una tangente de mismo valor; 1 píxel (de no hacerlo se obtendrían tangentes con muchos valores diferentes y no sería manejable). Luego giramos dicha flecha 90º y le sumamos la mitad del ancho a cada dirección.
 
-### Dibujar la pista
+#### Dibujar la pista
 
 El proceso de dibujar la pista es muy similar a los anteriores pero con el matiz de que vamos a dibujar cada casilla o tile en lugar de una línea. Para ello se usa el método `polygon()` de `pygame` con los 4 puntos que forman la casilla.
 
@@ -526,6 +526,158 @@ Es importante decir que este código no es perfecto y puede dar curvas raras o q
 
 **Nota:** Si los puntos no se en el orden en el que lo hacen aparecerán como “pajaritas”. El pincel de pygame va esquina por esquina y rellena el interior del polígono, por lo que el orden a la hora de dibujar es importante. En este caso: PuntoA- Interior → PuntoA-Exterior → PuntoB-Exterior → PuntoB-Interior.
 
+### Comprobación de posición en ejecución
+
+Para comprobar donde se encuentra el coche durante la ejecución se utiliza el método `get_at(x, y)` de pygame. Este método toma como parámetros la posición en `x` e `y` y devuelve el píxel exacto. Con este píxel se puede comprobar su color:
+
+- Si es gris el coche está en el asfalto y prosigue.
+- Si es verde está en la hierba y se habrá salido, por lo que se se resetea la ejecución y se aplica una recompensan negativa.
+
+Pero es importante destacar una cosa. Si el modo de renderizado no está en *human*, es decir, está en el modo `None`, que no renderiza nada y hace que el entrenamiento vaya miles de veces más rápido, no se creará ningún píxel y, por tanto, no habrá forma de calcular si el coche está tocando un píxel de asfalto o uno de hierba.
+
+La forma de sortear esto es crear un mapa en memoria RAM, pero no renderizarlo en la función `render()`, sino originarlo en la función `reset()` y comprobarlo en cada invocación de `step()`. De este modo el circuito se utiliza, pero nunca se muestra al usuario. Todo queda en memoria.
+
+#### En `reset()`
+
+En esta función sólo se crea el circuto y se “pinta” de forma similar que en la función `render()`. La diferencia es que sólo lo almacenamos en la memoria pero no se lo mostramos al usuario.
+
+```python
+# creación del circuito y posicionamiento del coche por arriba
+
+# CREACION DEL CIRCUITO EN MEMORIA
+        self.hitbox_surface = pygame.Surface((self.window_size, self.window_size))
+
+        # Crea el fondo de hierba
+        self.grass_color = (34, 139, 34)
+        self.hitbox_surface.fill(self.grass_color)
+
+        # Pinta el aslfato
+        num_points = len(self.track_interior)
+        for i in range(num_points):
+                next = (i + 1) % num_points
+                p1 = self.track_interior[i]
+                p2 = self.track_exterior[i]
+                p3 = self.track_exterior[next]
+                p4 = self.track_interior[next]
+
+                # Asfalto
+                pygame.draw.polygon(
+                    self.hitbox_surface,
+                    (100, 100, 100),
+                    [p1, p2, p3, p4]
+                )
+
+        return np.array([self.x, self.y, self.rotation, self.speed]), info
+```
+
+Al crearse en una variable con `self`, esta va a ser accesible por toda la clase como un atributo más. Ahora existirá una variable `window`, que será donde se dibujen las cosas para el usuario, y una variable `hitbox_surface`, que se “dibujen” las cosas para el algoritmo. La diferencia está en que cuando el modo de render no esté en human no se creará `window`, pero siempre se creará `hitbox_surface` y permitirá al algoritmo entrenar sin que lo veamos.
+
+#### En `step()`
+
+La idea en esta función es comprobar el píxel que ocupa el coche sobre el circuito almacenado en `hitbox_surface`.
+
+```python
+# cálculo de posición, rotación, físicas aplicadas...
+
+# Comprobación del estado con el circuito en memoria
+        pixel_x = int(self.x)
+        pixel_y = int(self.y)
+
+        # Comprobación de si el coche se ha salido de la pantalla
+        if pixel_x < 0 or pixel_x >= self.window_size or pixel_y < 0 or pixel_y >= self.window_size:
+            terminated = True
+            reward = -100.0
+        else:
+            # Comprueba el color que está pisando el coche
+            track_position_color = self.hitbox_surface.get_at((pixel_x, pixel_y)) # Devuelve el píxel
+            color_rgb = (track_position_color[0], track_position_color[1], track_position_color[2]) # Saca los canales R, G, B del píxel
+
+            if color_rgb == self.grass_color:
+                terminated = True
+                reward = -50.0
+            else:
+                reward = 0.1
+
+        if self.render_mode == "human":
+            self.render()
+
+        truncated = False
+
+        obs = np.array([self.x, self.y, self.rotation, self.speed])
+        return obs, reward, terminated, truncated, {}
+```
+
+En este ejemplo se da una recompensa de 0.1 por no tocar hierba, lo que en el futuro dará problemas porque el algoritmo aprenderá a estar únicamente quieto o a apenas moverse. Es válido en este ejemplo, pero lleva al siguiente punto.
+
+### Comprobar que el coche avanza
+
+Para esto se crea un sistema de checkpoints o puntos de control que el coche debe ir cruzando.
+
+Se parte de la base de que en la creación de las pistas se obtiene un `track_center`. Esta es la lista de puntos centrales sobre los que luego se crean los bordes interior y exterior explicado en el punto anterior. Esta lista no deja de ser una lista de puntos del circuito, por lo que es perfectamente válida para comprobar cuantos puntos de control recorre el coche.
+
+#### En `reset()`
+
+En esta función simplemente se arranca el sistema.
+
+```python
+# resto de configuración de parámetros y ciruito en memoria
+
+# SISTEMA CHECKPOINTS
+# El coche aparece en el punto 0. Su objetivo es el punto 1 (y así en adelante)
+self.current_checkpoint = 1
+self.num_checkpoints = len(self.track_center)
+        
+return np.array([self.x, self.y, self.rotation, self.speed]), info        
+```
+
+#### En `step()`
+
+En esta función se calcula la posición del coche respecto a su punto objetivo, un nuevo objetivo y se recompensa su avance.
+
+```python
+# en pseudocodigo la parte que ya se ha visto arriba
+
+if coche_fuera_de_pantalla:
+	terminated = True
+  reward = -100.0
+else:
+	track_position_color = self.hitbox_surface.get_at((pixel_x, pixel_y))
+	color_rgb = (track_position_color[0], track_position_color[1], track_position_color[2])
+	
+	if color_rgb == hierba:
+		terminated = True
+		reawrd = -50.0
+	else:
+		# COMPROBAR CHECKPOINT
+		# Saca el punto objetivo en x,y
+		x_goal = self.track_center[self.current_checkpoint][0]
+    y_goal = self.track_center[self.current_checkpoint][1]
+
+    # Mide la distancia en línea recta (hipotenusa)
+    dist = math.hypot(self.x - x_goal, self.y - y_goal)
+    if dist < 30.0: # por poner un margen. Realmente debería ser como la mitad del ancho que se establezca, pero de momento queda hardcodeado
+	    reward += 10.0 # se premia el avance
+                    
+      self.current_checkpoint += 1 # se actualiza el objetivo
+	      if self.current_checkpoint >= self.num_checkpoints:
+	        terminated = True
+          reward += 100.0 # mucha recompensa por completar el circuito
+          print("Vuelta completada.")
+```
+
+El proceso de la comprobación del checkpoint es:
+
+1. Se obtiene la coordenada x,y del punto objetivo (`x_goal`, `y_goal`)
+2. Se mide la distancia desde el punto actual al punto objetivo. Como hemos visto antes, esta distancia es una línea recta y se calcula con la hipotenusa de estos puntos.
+3. Si la distancia calculada es menor a el margen de error (en este caso 30.0) se entiende que el coche ha avanzado y se le premia con una pequeña recompensa. 
+    
+    **Nota:** Este margen existe porque el coche no va a ir por el centro la mayor parte del tiempo. Por lo que le damos un área para poder marcar el checkpoint aunque no pase exactamente por el punto.
+    
+4. Se actualiza el punto objetivo al siguiente.
+5. Se comprueba que el punto objetivo (ya actualizado) no sea mayor o igual al número de checkpoints.
+    1. Si no lo es el bucle se repite.
+    2. Si lo es el coche ha terminado la vuelta. Se finaliza el episodio y se le da una recompensa muy grande por completar el objetivo final.
+
 ### Recursos
 
 Documentación: [https://gymnasium.farama.org/environments/box2d/car_racing/](https://gymnasium.farama.org/environments/box2d/car_racing/) (Visto 10/04/2026)
@@ -533,3 +685,5 @@ Documentación: [https://gymnasium.farama.org/environments/box2d/car_racing/](ht
 Artículo resuelto: [https://www.findingtheta.com/es/blog/solving-gymnasiums-car-racing-with-reinforcement-learning](https://www.findingtheta.com/es/blog/solving-gymnasiums-car-racing-with-reinforcement-learning) (Visto 10/04/2026)
 
 Generación de pistas de forma procedural: https://github.com/ChrisPHP/ProceduralRacetrack y [https://youtu.be/BTfghIWZFMw](https://youtu.be/BTfghIWZFMw) (Visto 12/04/2026)
+
+[https://www.pygame.org/docs/](https://www.pygame.org/docs/) (Visto durante todo el proyecto)

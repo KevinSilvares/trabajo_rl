@@ -69,6 +69,34 @@ class EntornoDef(gym.Env):
         
         info = {}
 
+        # CREACION DEL CIRCUITO EN MEMORIA
+        self.hitbox_surface = pygame.Surface((self.window_size, self.window_size))
+
+        # Crea el fondo de hierba
+        self.grass_color = (34, 139, 34)
+        self.hitbox_surface.fill(self.grass_color)
+
+        # Pinta el aslfato
+        num_points = len(self.track_center)
+        for i in range(num_points):
+                next = (i + 1) % num_points
+                p1 = self.track_interior[i]
+                p2 = self.track_exterior[i]
+                p3 = self.track_exterior[next]
+                p4 = self.track_interior[next]
+
+                # Asfalto
+                pygame.draw.polygon(
+                    self.hitbox_surface,
+                    (100, 100, 100),
+                    [p1, p2, p3, p4]
+                )
+
+        # SISTEMA CHECKPOINTS
+        # El coche aparece en el punto 0. Su objetivo es el punto 1 (y así en adelante)
+        self.current_checkpoint = 1
+        self.num_checkpoints = len(self.track_center)
+
         return np.array([self.x, self.y, self.rotation, self.speed]), info
     
     def step(self, action):
@@ -103,12 +131,43 @@ class EntornoDef(gym.Env):
         # Se resta porque en pantallas el punto izquierdo alto es y = 0 
         self.y -= self.speed * math.sin(radians)
 
-        terminated = False
-        truncated = False
-        reward = 0.0
+        # Comprobación del estado con el circuito en memoria
+        pixel_x = int(self.x)
+        pixel_y = int(self.y)
+
+        # Comprobación de si el coche se ha salido de la pantalla
+        if pixel_x < 0 or pixel_x >= self.window_size or pixel_y < 0 or pixel_y >= self.window_size:
+            terminated = True
+            reward = -100.0
+        else:
+            # Comprueba el color que está pisando el coche
+            track_position_color = self.hitbox_surface.get_at((pixel_x, pixel_y))
+            color_rgb = (track_position_color[0], track_position_color[1], track_position_color[2])
+
+            if color_rgb == self.grass_color:
+                terminated = True
+                reward = -50.0
+            else:
+                # COMRPOBAR CHECKPOINT
+                # Saca el punto objetivo en x,y
+                x_goal = self.track_center[self.current_checkpoint][0]
+                y_goal = self.track_center[self.current_checkpoint][1]
+
+                # Mide la distancia en línea recta (hipotenusa)
+                dist = math.hypot(self.x - x_goal, self.y - y_goal)
+                if dist < 30.0: # por poner un margen. Realmente debería ser como la mitad del ancho que se establezca, pero de momento queda hardcodeado
+                    reward += 10.0 # se premia el avance
+                    
+                    self.current_checkpoint += 1 # se actualiza el objetivo
+                    if self.current_checkpoint >= self.num_checkpoints:
+                        terminated = True
+                        reward += 100.0 # mucha recompensa por completar el circuito
+                        print("Vuelta completada.")
 
         if self.render_mode == "human":
             self.render()
+
+        truncated = False
 
         obs = np.array([self.x, self.y, self.rotation, self.speed])
         return obs, reward, terminated, truncated, {}

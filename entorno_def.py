@@ -31,7 +31,7 @@ class EntornoDef(gym.Env):
         self.observation_space = spaces.Box(
             low = 0, # negro
             high = 255, # blanco
-            shape = (self.obs_size, self.obs_size, 3), # 3 = 3 canales de color. Esto puede cambiar a 1 para que se entrene con imágenes en blanco y negro.
+            shape = (self.obs_size, self.obs_size, 1), # 1 = 1 canales de color. Imágenes en blanco y negro.
             dtype = np.uint8 # uint8 en lugar de int para mejorar la eficiencia de RAM. El rango es de 0 a 255.
         )
 
@@ -49,6 +49,39 @@ class EntornoDef(gym.Env):
         self.window = None
         self.clock = None
     
+    def _get_obs(self):
+        # Crea el lienzo de la imagen
+        obs_surface = pygame.Surface((self.window_size, self.window_size))
+
+        # Pega el circuito (en RAM) sobre el lienzo
+        obs_surface.blit(self.hitbox_surface, (0, 0))
+
+        # "Dibuja" el coche como un cuadrado blanco puro para que destaque sobre el fondo
+        car_rect = pygame.Surface((30, 15), pygame.SRCALPHA)
+        car_rect.fill((255, 255, 255))
+
+        rotated_car = pygame.transform.rotate(car_rect, self.rotation)
+        rect = rotated_car.get_rect(center = (self.x, self.y))
+
+        obs_surface.blit(rotated_car, rect.topleft)
+
+        # Escala la imagen a 64x64
+        small_surface = pygame.transform.scale(obs_surface, (self.obs_size, self.obs_size))
+
+        # Extrae los píxeles RGB (3 canales)
+        rgb_array = pygame.surfarray.array3d(small_surface)
+
+        # Las redes neuronales prefieren Y,X,Color. La anterior línea devuelve X,Y,Color
+        rgb_array = np.transpose(rgb_array, (1, 0, 2))
+
+        # Convierte la imagen RGB a escala de grises calculando la media de los píxeles
+        gray_array = np.mean(rgb_array, axis =2).astype(np.uint8)
+
+        # Añade la dimensión (el canal de grises) a la imagen
+        obs = np.expand_dims(gray_array, axis = -1)
+
+        return obs 
+
     def reset(self, seed = None):
         super().reset(seed = seed)
 
@@ -97,7 +130,7 @@ class EntornoDef(gym.Env):
         self.current_checkpoint = 1
         self.num_checkpoints = len(self.track_center)
 
-        return np.array([self.x, self.y, self.rotation, self.speed]), info
+        return self._get_obs(), info
     
     def step(self, action):
         steering_wheel = action[0]
@@ -135,6 +168,8 @@ class EntornoDef(gym.Env):
         pixel_x = int(self.x)
         pixel_y = int(self.y)
 
+        reward = 0
+        terminated = False
         # Comprobación de si el coche se ha salido de la pantalla
         if pixel_x < 0 or pixel_x >= self.window_size or pixel_y < 0 or pixel_y >= self.window_size:
             terminated = True
@@ -169,8 +204,7 @@ class EntornoDef(gym.Env):
 
         truncated = False
 
-        obs = np.array([self.x, self.y, self.rotation, self.speed])
-        return obs, reward, terminated, truncated, {}
+        return self._get_obs(), reward, terminated, truncated, {}
     
     def render(self):
         if self.render_mode != "human":

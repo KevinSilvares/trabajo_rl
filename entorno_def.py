@@ -11,7 +11,7 @@ class EntornoDef(gym.Env):
     
     metadata = {
         "render_modes": ["human"],
-        "render_fps": 10
+        "render_fps": 30
     }
 
     def __init__(self, render_mode = None):
@@ -183,6 +183,8 @@ class EntornoDef(gym.Env):
                 terminated = True
                 reward = -50.0
             else:
+                reward = -0.05 # aplicado porque el coche se estaba parando para no ser penalizado
+
                 # COMRPOBAR CHECKPOINT
                 # Saca el punto objetivo en x,y
                 x_goal = self.track_center[self.current_checkpoint][0]

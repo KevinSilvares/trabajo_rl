@@ -1,4 +1,3 @@
-
 import math
 import random
 import numpy as np
@@ -86,7 +85,7 @@ def generate_complete_track(x_center, y_center, num_points = 14, base_radius = 2
 
     tck, u = splprep([points_x, points_y], s = 0, per = True)
 
-    u_nuevo = np.linspace(0, 1, 100)
+    u_nuevo = np.linspace(0, 1, 100, endpoint = False)
     smooth_points_x, smooth_points_y = splev(u_nuevo, tck)
 
     # Los puntos suavizados, lo que generate_smooth_track era la pista van a ser los puntos centrales para calcular el ancho de la pista
@@ -127,3 +126,103 @@ def generate_complete_track(x_center, y_center, num_points = 14, base_radius = 2
         exterior.append((p1[0] - (nx * half_width), p1[1] - (ny * half_width)))
 
     return center_points, interior, exterior
+
+def generate_perfect_oval(window_size = 800):
+        track_center = []
+        interior = []
+        exterior = []
+
+        x_center = window_size / 2
+        y_center = window_size / 2
+        
+        x_radius = window_size * 0.35
+        y_radius = window_size * 0.25
+        
+        width = 60 
+        num_points = 50
+
+        for i in range(num_points):
+            theta = (i / num_points) * (2 * math.pi)
+
+            # CENTRO
+            cx = x_center + x_radius * math.cos(theta)
+            cy = y_center + y_radius * math.sin(theta)
+            track_center.append((cx, cy))
+
+            # BORDES
+            # Para hacer bordes perfectos, necesitamos el vector "normal" (perpendicular a la curva)
+            dx = -x_radius * math.sin(theta)
+            dy = y_radius * math.cos(theta)
+            
+            # Normaliza el vector
+            longitud = math.hypot(dx, dy)
+            nx = -dy / longitud
+            ny = dx / longitud
+
+            # Multiplicamos el vector normal por la mitad del ancho para empujar los bordes hacia afuera/adentro
+            half_width = width / 2
+            
+            ex = cx + nx * half_width
+            ey = cy + ny * half_width
+            exterior.append((ex, ey))
+
+            inx = cx - nx * half_width
+            iny = cy - ny * half_width
+            interior.append((inx, iny))
+
+        return track_center, interior, exterior
+
+def generate_valid_track(x_center, y_center, num_points = 14, base_radius = 250, width = 60):
+    max_tries = 50
+
+    for attempt in range(max_tries):
+        track_center, interior, exterior = generate_complete_track(x_center, y_center)
+
+        valid_track = True
+
+        num_points = len(track_center)
+
+        # Compara puntos que estén separados por 10 puntos.
+        for i in range(num_points):
+            for j in range(i + 15, num_points - 15):
+                distance = math.hypot(track_center[i][0] - track_center[j][0],
+                                      track_center[i][1] - track_center[j][1])
+                
+                if distance < (width * 1.5):
+                    valid_track = False
+                    break
+            if not valid_track:
+                break
+
+        if valid_track:
+            for i in range(num_points):
+                # Coge 3 puntos consecutivos 
+                p1 = track_center[i - 1]
+                p2 = track_center[i]
+                p3 = track_center[(i + 1) % num_points]
+
+                # Calcula los vectores de dirección
+                v1_x, v1_y = p2[0] - p1[0], p2[1] - p1[1]
+                v2_x, v2_y = p3[0] - p2[0], p3[1] - p2[1]
+
+                # Calculamos el ángulo entre los vectores
+                angulo1 = math.atan2(v1_y, v1_x)
+                angulo2 = math.atan2(v2_y, v2_x)
+                
+                # Diferencia absoluta del ángulo
+                diferencia_angulo = abs(angulo2 - angulo1)
+                
+                # Normalizamos para que no pase de 180 grados (PI)
+                if diferencia_angulo > math.pi:
+                    diferencia_angulo = (2 * math.pi) - diferencia_angulo
+
+                # Si el giro es de más de 45 grados de golpe, es un pellizco roto.
+                if diferencia_angulo > math.radians(45):
+                    valid_track = False
+                    break
+                    
+    if valid_track:
+        return track_center, interior, exterior
+   
+    print(f"No se pudo generar una pista válida después de {max_tries} intentos. Se generará un óvalo perfecto.")
+    return generate_perfect_oval()

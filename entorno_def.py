@@ -4,7 +4,7 @@ import pygame
 import math
 import numpy as np
 
-from track_gen import generate_complete_track
+from track_gen import generate_valid_track
 
 class EntornoDef(gym.Env):
     FRICTION = 0.05
@@ -87,7 +87,7 @@ class EntornoDef(gym.Env):
 
         screen_center = self.window_size // 2       
 
-        self.track_center, self.track_interior, self.track_exterior = generate_complete_track(screen_center, screen_center)
+        self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
 
         # Coloca el pisto en la salida (El punto 0 de la pista)
         self.x = self.track_center[0][0]

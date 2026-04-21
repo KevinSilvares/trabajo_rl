@@ -128,16 +128,23 @@ class EntornoDef(gym.Env):
         # SISTEMA CHECKPOINTS
         # El coche aparece en el punto 0. Su objetivo es el punto 1 (y así en adelante)
         self.current_checkpoint = 1
+
+        x_goal = self.track_center[self.current_checkpoint][0]
+        y_goal = self.track_center[self.current_checkpoint][1]
+
+        # Calcula la distancia a cada checkpoint para recompensar cuando se acerque
+        self.previous_distance = math.hypot(self.x - x_goal, self.y - y_goal)
+
         self.num_checkpoints = len(self.track_center)
 
         return self._get_obs(), info
     
     def step(self, action):
-        steering_wheel = action[0]
+        steering_wheel = abs(action[0])
         pedal = action[1]
 
-        engine_power = 2.0  # potencia del motor
-        steering_sensibility = 5.0 # sensibilidad del giro. Responsividad del volante
+        engine_power = 1.0  # potencia del motor
+        steering_sensibility = 10.0 # sensibilidad del giro. Responsividad del volante
 
         # VELOCIDAD
         self.speed += pedal * engine_power
@@ -168,7 +175,9 @@ class EntornoDef(gym.Env):
         pixel_x = int(self.x)
         pixel_y = int(self.y)
 
-        reward = 0
+        # Castigo por girar bruscamente
+        reward = -0.05 - (steering_wheel * 0.1)
+
         terminated = False
         # Comprobación de si el coche se ha salido de la pantalla
         if pixel_x < 0 or pixel_x >= self.window_size or pixel_y < 0 or pixel_y >= self.window_size:
@@ -189,14 +198,24 @@ class EntornoDef(gym.Env):
                 # Saca el punto objetivo en x,y
                 x_goal = self.track_center[self.current_checkpoint][0]
                 y_goal = self.track_center[self.current_checkpoint][1]
-
                 # Mide la distancia en línea recta (hipotenusa)
-                dist = math.hypot(self.x - x_goal, self.y - y_goal)
-                if dist < 30.0: # por poner un margen. Realmente debería ser como la mitad del ancho que se establezca, pero de momento queda hardcodeado
+                current_distance = math.hypot(self.x - x_goal, self.y - y_goal)
+
+                # Si la distancia es menor que la anterior se ha acercado (+) y le recompensamos por ello. Si no (-) le penalizamos
+                best_distance = self.previous_distance - current_distance
+
+                # Micro recompensa por avanzar
+                reward += best_distance * 0.5
+
+                if current_distance < 30.0: # por poner un margen. Realmente debería ser como la mitad del ancho que se establezca, pero de momento queda hardcodeado
                     reward += 10.0 # se premia el avance
                     
                     self.current_checkpoint += 1 # se actualiza el objetivo
-                    if self.current_checkpoint >= self.num_checkpoints:
+                    if self.current_checkpoint < self.num_checkpoints:
+                        new_x_goal = self.track_center[self.current_checkpoint][0]
+                        new_y_goal = self.track_center[self.current_checkpoint][1]
+                        self.previous_distance = math.hypot(self.x - new_x_goal, self.y - new_y_goal)
+                    else:
                         terminated = True
                         reward += 100.0 # mucha recompensa por completar el circuito
                         print("Vuelta completada.")

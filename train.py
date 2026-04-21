@@ -43,11 +43,11 @@ def main():
         raise ValueError("Algoritmo no soportado.")
     
     # Entrenar
-    training_steps = 200000
+    training_steps = 500000
     model.learn(total_timesteps = training_steps, callback = eval_callback)
 
     # Guardar resultados
-    file_path = f"model_{ALGORITHM}_test3_200ksteps"
+    file_path = f"model_{ALGORITHM}_test3_500ksteps"
     model.save(file_path)
 
     print(f"Entrenamiento finalizado. Modelo guardado correctametne como {file_path}.zip")

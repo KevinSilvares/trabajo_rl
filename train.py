@@ -1,3 +1,4 @@
+import os
 import gymnasium as gym
 from stable_baselines3 import SAC, A2C
 from stable_baselines3.common.callbacks import EvalCallback
@@ -6,9 +7,12 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecTran
 from stable_baselines3.common.monitor import Monitor
 
 def main():
+    os.makedirs("./logs/tensorboard", exist_ok = True)
+    os.makedirs("./modelos/fase2", exist_ok = True)
+
     env_original = EntornoDef(render_mode = None)
 
-    env_monitorized = Monitor(env_original, filename = "./logs/monitor_ovalo.csv")
+    env_monitorized = Monitor(env_original, filename = "./logs/monitor_procedural.csv")
 
     ALGORITHM = "SAC" # Modificable a "A2C"
     print(f"Cargando: {ALGORITHM}")
@@ -27,8 +31,8 @@ def main():
     # Comprueba el rendimiento del modelo e irá guardando el mejor
     eval_callback = EvalCallback(
         eval_vec_ap,
-        best_model_save_path = "./modelos/",
-        log_path = "./logs/",
+        best_model_save_path = "./modelos/fase2",
+        log_path = "./logs/fase2_eval",
         eval_freq = 5000,
         deterministic = True,
         render = False
@@ -36,18 +40,19 @@ def main():
 
     # Hay que especificarle al algoritmo que usará imagenes. Se define una política (CNNPolicy)
     if ALGORITHM == "SAC":
-        model = SAC("CnnPolicy", env_ap, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/")
+        # model = SAC("CnnPolicy", env_ap, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/")
+        model = SAC.load("./modelos/best_model", env = env_ap, tensorboard_logs = "./logs/tensorboard")
     elif ALGORITHM == "A2C":
         model = A2C("CnnPolicy", env_ap, verbose = 1)
     else:
         raise ValueError("Algoritmo no soportado.")
     
     # Entrenar
-    training_steps = 200000
-    model.learn(total_timesteps = training_steps, callback = eval_callback, tb_log_name = "Fase1_Ovalo")
+    training_steps = 1000000
+    model.learn(total_timesteps = training_steps, callback = eval_callback, tb_log_name = "Fase2_Procedural", reset_num_timesteps = False)
 
     # Guardar resultados
-    file_path = f"model_{ALGORITHM}_test4_oval"
+    file_path = f"model_{ALGORITHM}_1m_steps"
     model.save(file_path)
 
     print(f"Entrenamiento finalizado. Modelo guardado correctametne como {file_path}.zip")

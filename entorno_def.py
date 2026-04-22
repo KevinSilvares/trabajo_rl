@@ -17,6 +17,7 @@ class EntornoDef(gym.Env):
     def __init__(self, render_mode = None):
         super().__init__()
         self.max_inactivity_steps = 300
+        self.inactivity_steps = 0
 
         # ACCIONES: Volante y Pedales
         # Ambos controlen van desde el -1.0 al 1.0
@@ -90,8 +91,8 @@ class EntornoDef(gym.Env):
 
         screen_center = self.window_size // 2       
 
-        # self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
-        self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(screen_center, screen_center)
+        self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
+        # self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(self.window_size)
 
         # Coloca el pisto en la salida (El punto 0 de la pista)
         self.x = self.track_center[0][0]
@@ -145,7 +146,7 @@ class EntornoDef(gym.Env):
         return self._get_obs(), info
     
     def step(self, action):
-        pygame.event.pump() # Evita un bug que congelaba la ejecución sin renderizado
+        # pygame.event.pump() # Evita un bug que congelaba la ejecución sin renderizado
         self.inactivity_steps += 1
 
         steering_wheel = abs(action[0])

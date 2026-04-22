@@ -4,7 +4,7 @@ import pygame
 import math
 import numpy as np
 
-from track_gen import generate_valid_track
+from track_gen import generate_valid_track, generate_perfect_oval
 
 class EntornoDef(gym.Env):
     FRICTION = 0.05
@@ -16,6 +16,7 @@ class EntornoDef(gym.Env):
 
     def __init__(self, render_mode = None):
         super().__init__()
+        self.max_inactivity_steps = 300
 
         # ACCIONES: Volante y Pedales
         # Ambos controlen van desde el -1.0 al 1.0
@@ -84,10 +85,13 @@ class EntornoDef(gym.Env):
 
     def reset(self, seed = None):
         super().reset(seed = seed)
+        
+        self.inactivity_steps += 1
 
         screen_center = self.window_size // 2       
 
-        self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
+        # self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
+        self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(screen_center, screen_center)
 
         # Coloca el pisto en la salida (El punto 0 de la pista)
         self.x = self.track_center[0][0]
@@ -137,9 +141,13 @@ class EntornoDef(gym.Env):
 
         self.num_checkpoints = len(self.track_center)
 
+        self.inactivity_steps = 0
         return self._get_obs(), info
     
     def step(self, action):
+        pygame.event.pump() # Evita un bug que congelaba la ejecución sin renderizado
+        self.inactivity_steps += 1
+
         steering_wheel = abs(action[0])
         pedal = action[1]
 
@@ -211,6 +219,7 @@ class EntornoDef(gym.Env):
                     reward += 10.0 # se premia el avance
                     
                     self.current_checkpoint += 1 # se actualiza el objetivo
+                    self.inactivity_steps = 0
                     if self.current_checkpoint < self.num_checkpoints:
                         new_x_goal = self.track_center[self.current_checkpoint][0]
                         new_y_goal = self.track_center[self.current_checkpoint][1]
@@ -219,6 +228,10 @@ class EntornoDef(gym.Env):
                         terminated = True
                         reward += 100.0 # mucha recompensa por completar el circuito
                         print("Vuelta completada.")
+                
+                if self.inactivity_steps >= self.max_inactivity_steps:
+                    truncated = True
+                    reward -= 20
 
         if self.render_mode == "human":
             self.render()

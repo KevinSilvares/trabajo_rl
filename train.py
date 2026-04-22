@@ -8,7 +8,7 @@ from stable_baselines3.common.monitor import Monitor
 def main():
     env_original = EntornoDef(render_mode = None)
 
-    env_monitorized = Monitor(env_original)
+    env_monitorized = Monitor(env_original, filename = "./logs/monitor_ovalo.csv")
 
     ALGORITHM = "SAC" # Modificable a "A2C"
     print(f"Cargando: {ALGORITHM}")
@@ -36,18 +36,18 @@ def main():
 
     # Hay que especificarle al algoritmo que usará imagenes. Se define una política (CNNPolicy)
     if ALGORITHM == "SAC":
-        model = SAC("CnnPolicy", env_ap, buffer_size = 50000, verbose = 1)
+        model = SAC("CnnPolicy", env_ap, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/")
     elif ALGORITHM == "A2C":
         model = A2C("CnnPolicy", env_ap, verbose = 1)
     else:
         raise ValueError("Algoritmo no soportado.")
     
     # Entrenar
-    training_steps = 500000
-    model.learn(total_timesteps = training_steps, callback = eval_callback)
+    training_steps = 200000
+    model.learn(total_timesteps = training_steps, callback = eval_callback, tb_log_name = "Fase1_Ovalo")
 
     # Guardar resultados
-    file_path = f"model_{ALGORITHM}_test3_500ksteps"
+    file_path = f"model_{ALGORITHM}_test4_oval"
     model.save(file_path)
 
     print(f"Entrenamiento finalizado. Modelo guardado correctametne como {file_path}.zip")

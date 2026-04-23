@@ -91,8 +91,8 @@ class EntornoDef(gym.Env):
 
         screen_center = self.window_size // 2       
 
-        self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
-        # self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(self.window_size)
+        # self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
+        self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(self.window_size)
 
         # Coloca el pisto en la salida (El punto 0 de la pista)
         self.x = self.track_center[0][0]
@@ -149,7 +149,7 @@ class EntornoDef(gym.Env):
         # pygame.event.pump() # Evita un bug que congelaba la ejecución sin renderizado
         self.inactivity_steps += 1
 
-        steering_wheel = abs(action[0])
+        steering_wheel = action[0]
         pedal = action[1]
 
         engine_power = 1.0  # potencia del motor
@@ -189,9 +189,13 @@ class EntornoDef(gym.Env):
         pixel_y = int(self.y)
 
         # Castigo por girar bruscamente
-        reward = -0.05 - (steering_wheel * 0.1)
+        reward = -0.05 - (abs(steering_wheel) * 0.1)
+
+        if self.speed < 0.3:
+            reward -= 0.1 # el coche decidía pararse para no perder tantos puntos
 
         terminated = False
+        truncated = False
         # Comprobación de si el coche se ha salido de la pantalla
         if pixel_x < 0 or pixel_x >= self.window_size or pixel_y < 0 or pixel_y >= self.window_size:
             terminated = True
@@ -205,8 +209,6 @@ class EntornoDef(gym.Env):
                 terminated = True
                 reward = -50.0
             else:
-                reward = -0.05 # aplicado porque el coche se estaba parando para no ser penalizado
-
                 # COMRPOBAR CHECKPOINT
                 # Saca el punto objetivo en x,y
                 x_goal = self.track_center[self.current_checkpoint][0]
@@ -220,11 +222,14 @@ class EntornoDef(gym.Env):
                 # Micro recompensa por avanzar
                 reward += best_distance * 0.5
 
+                self.previous_distance = current_distance
+
                 if current_distance < 30.0: # por poner un margen. Realmente debería ser como la mitad del ancho que se establezca, pero de momento queda hardcodeado
                     reward += 10.0 # se premia el avance
                     
                     self.current_checkpoint += 1 # se actualiza el objetivo
                     self.inactivity_steps = 0
+
                     if self.current_checkpoint < self.num_checkpoints:
                         new_x_goal = self.track_center[self.current_checkpoint][0]
                         new_y_goal = self.track_center[self.current_checkpoint][1]
@@ -236,12 +241,10 @@ class EntornoDef(gym.Env):
                 
                 if self.inactivity_steps >= self.max_inactivity_steps:
                     truncated = True
-                    reward -= 20
+                    reward -= 100.0
 
         if self.render_mode == "human":
             self.render()
-
-        truncated = False
 
         return self._get_obs(), reward, terminated, truncated, {}
     

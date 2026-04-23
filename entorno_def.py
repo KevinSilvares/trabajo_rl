@@ -153,13 +153,17 @@ class EntornoDef(gym.Env):
         pedal = action[1]
 
         engine_power = 1.0  # potencia del motor
+        brake_power = 4.0
         steering_sensibility = 10.0 # sensibilidad del giro. Responsividad del volante
 
-        # VELOCIDAD
-        self.speed += pedal * engine_power
-
-        # Limitación de velocidad
-        self.speed = np.clip(self.speed, -5.0, 15.0)
+        if pedal > 0:
+            # VELOCIDAD
+            self.speed += pedal * engine_power
+        else:
+            self.speed += pedal * brake_power
+        
+        # Limitación de velocidad y marcha atrás
+        self.speed = np.clip(self.speed, 0.0, 10.0)
 
         # GIRO
         if abs(self.speed) > 0.1:

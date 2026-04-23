@@ -26,7 +26,6 @@ def main():
     eval_env_monitorized = Monitor(eval_env)
     eval_vec = DummyVecEnv([lambda: eval_env_monitorized])
     eval_vec_ap = VecFrameStack(eval_vec, n_stack = 4)
-    eval_vec_ap = VecTransposeImage(eval_vec_ap)
 
     # Comprueba el rendimiento del modelo e irá guardando el mejor
     eval_callback = EvalCallback(
@@ -41,7 +40,7 @@ def main():
     # Hay que especificarle al algoritmo que usará imagenes. Se define una política (CNNPolicy)
     if ALGORITHM == "SAC":
         # model = SAC("CnnPolicy", env_ap, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/")
-        model = SAC.load("./modelos/best_model", env = env_ap, tensorboard_logs = "./logs/tensorboard")
+        model = SAC.load("./modelos/best_model", env = env_ap, tensorboard_logs = "./logs/tensorboard", custom_objects = {"learning_rate": 0.0001})
     elif ALGORITHM == "A2C":
         model = A2C("CnnPolicy", env_ap, verbose = 1)
     else:

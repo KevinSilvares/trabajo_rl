@@ -3,12 +3,12 @@ from stable_baselines3 import SAC, A2C
 from entorno_def import EntornoDef
 
 def main():
-    phase = "vectores/fase1.0.2"
+    PHASE = "vectores/fase1.0.2_continuacion"
 
     print("Iniciando entorno...")
     env = EntornoDef(render_mode = "human")
 
-    model_path = f"modelos/{phase}/best_model"
+    model_path = f"modelos/{PHASE}/best_model"
     print(f"Cargando modelo desde: {model_path}.zip")
 
     try:

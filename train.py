@@ -3,62 +3,53 @@ import gymnasium as gym
 from stable_baselines3 import SAC, A2C
 from stable_baselines3.common.callbacks import EvalCallback
 from entorno_def import EntornoDef
-from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecTransposeImage
 from stable_baselines3.common.monitor import Monitor
 
 def main():
+    PHASE = "vectores/fase1.0.2_continuacion"
+    TRAINING_STEPS = 300000
+
     os.makedirs("./logs/tensorboard", exist_ok = True)
-    os.makedirs("./modelos/fase2", exist_ok = True)
+    os.makedirs(f"./modelos/{PHASE}", exist_ok = True)
 
-    env_original = EntornoDef(render_mode = None)
+    env = EntornoDef(render_mode = None)
+    env_monitorized = Monitor(env)
 
-    env_monitorized = Monitor(env_original, filename = "./logs/monitor_fase1.2.2.csv")
+    eval_env = EntornoDef(render_mode = None)
+    eval_env_monitorized = Monitor(eval_env)
 
     ALGORITHM = "SAC" # Modificable a "A2C"
     print(f"Cargando: {ALGORITHM}")
 
-    # APILAR 4 IMAGENES
-    vec_env = DummyVecEnv([lambda: env_monitorized])
-    env_ap = VecFrameStack(vec_env, n_stack = 4)
-    env_ap = VecTransposeImage(env_ap)
-
-    eval_env = EntornoDef(render_mode = None)
-    eval_env_monitorized = Monitor(eval_env)
-    eval_vec = DummyVecEnv([lambda: eval_env_monitorized])
-    eval_vec_ap = VecFrameStack(eval_vec, n_stack = 4)
-    eval_vec_ap = VecTransposeImage(eval_vec_ap)
-
     # Comprueba el rendimiento del modelo e irá guardando el mejor
     eval_callback = EvalCallback(
-        eval_vec_ap,
-        best_model_save_path = "./modelos/fase1.2.2",
-        log_path = "./logs/fase1.2_eval",
+        eval_env_monitorized,
+        best_model_save_path = f"./modelos/{PHASE}",
+        log_path = f"./logs/{PHASE}",
         eval_freq = 5000,
         deterministic = True,
         render = False
     )
 
-    # Hay que especificarle al algoritmo que usará imagenes. Se define una política (CNNPolicy)
+    # Hay que especificarle al algoritmo que usará parámetros de estado (vectores). Se define una política (MlpPolicy)
     if ALGORITHM == "SAC":
-        model = SAC("CnnPolicy", env_ap, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/")
-        # model = SAC.load("./modelos/best_model", env = env_ap, tensorboard_logs = "./logs/tensorboard", custom_objects = {"learning_rate": 0.0001})
+        # model = SAC("MlpPolicy", env_monitorized, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/")
+        model = SAC.load("./modelos/vectores/fase1.0.1/best_model", env = env_monitorized, tensorboard_logs = "./logs/tensorboard")
     elif ALGORITHM == "A2C":
-        model = A2C("CnnPolicy", env_ap, verbose = 1)
+        model = A2C("MlpPolicy", env_monitorized, verbose = 1)
     else:
         raise ValueError("Algoritmo no soportado.")
     
     # Entrenar
-    training_steps = 200000
-    model.learn(total_timesteps = training_steps, callback = eval_callback, tb_log_name = "Fase1_Ovalo_1.2.2", reset_num_timesteps = False)
+    model.learn(total_timesteps = TRAINING_STEPS, callback = eval_callback, tb_log_name = f"{PHASE}", reset_num_timesteps = False)
 
     # Guardar resultados
-    file_path = f"model_{ALGORITHM}_fase_1.2"
+    file_path = f"model_{ALGORITHM}_{PHASE}"
     model.save(file_path)
 
     print(f"Entrenamiento finalizado. Modelo guardado correctametne como {file_path}.zip")
 
-    env_ap.close()
-    eval_vec_ap.close()
+    env.close()
 
 if __name__ == "__main__":
     main()

@@ -12,7 +12,7 @@ def main():
 
     env_original = EntornoDef(render_mode = None)
 
-    env_monitorized = Monitor(env_original, filename = "./logs/monitor_procedural_100k.csv")
+    env_monitorized = Monitor(env_original, filename = "./logs/monitor_fase1.2.2.csv")
 
     ALGORITHM = "SAC" # Modificable a "A2C"
     print(f"Cargando: {ALGORITHM}")
@@ -31,7 +31,7 @@ def main():
     # Comprueba el rendimiento del modelo e irá guardando el mejor
     eval_callback = EvalCallback(
         eval_vec_ap,
-        best_model_save_path = "./modelos/fase1.2",
+        best_model_save_path = "./modelos/fase1.2.2",
         log_path = "./logs/fase1.2_eval",
         eval_freq = 5000,
         deterministic = True,
@@ -40,7 +40,7 @@ def main():
 
     # Hay que especificarle al algoritmo que usará imagenes. Se define una política (CNNPolicy)
     if ALGORITHM == "SAC":
-        model = SAC("CnnPolicy", env_ap, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/", custom_objects = {"learning_rate": 0.0001})
+        model = SAC("CnnPolicy", env_ap, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/")
         # model = SAC.load("./modelos/best_model", env = env_ap, tensorboard_logs = "./logs/tensorboard", custom_objects = {"learning_rate": 0.0001})
     elif ALGORITHM == "A2C":
         model = A2C("CnnPolicy", env_ap, verbose = 1)
@@ -48,8 +48,8 @@ def main():
         raise ValueError("Algoritmo no soportado.")
     
     # Entrenar
-    training_steps = 100000
-    model.learn(total_timesteps = training_steps, callback = eval_callback, tb_log_name = "Fase1_Ovalo_1.2", reset_num_timesteps = False)
+    training_steps = 200000
+    model.learn(total_timesteps = training_steps, callback = eval_callback, tb_log_name = "Fase1_Ovalo_1.2.2", reset_num_timesteps = False)
 
     # Guardar resultados
     file_path = f"model_{ALGORITHM}_fase_1.2"

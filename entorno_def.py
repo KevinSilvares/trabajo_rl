@@ -16,7 +16,7 @@ class EntornoDef(gym.Env):
 
     def __init__(self, render_mode = None):
         super().__init__()
-        self.max_inactivity_steps = 300
+        self.max_inactivity_steps = 100
         self.inactivity_steps = 0
 
         # ACCIONES: Volante y Pedales
@@ -187,19 +187,20 @@ class EntornoDef(gym.Env):
         # Comprobación del estado con el circuito en memoria
         pixel_x = int(self.x)
         pixel_y = int(self.y)
+        
+        # Recompensa por moverse. Eliminado el castigo por estar quieto
+        reward = (self.speed / 10.0) * 0.1
 
         # Castigo por girar bruscamente
-        reward = -0.05 - (abs(steering_wheel) * 0.1)
-
-        if self.speed < 0.3:
-            reward -= 0.1 # el coche decidía pararse para no perder tantos puntos
+        reward -= abs(steering_wheel) * 0.01
 
         terminated = False
         truncated = False
+
         # Comprobación de si el coche se ha salido de la pantalla
         if pixel_x < 0 or pixel_x >= self.window_size or pixel_y < 0 or pixel_y >= self.window_size:
             terminated = True
-            reward = -100.0
+            reward = -1.0
         else:
             # Comprueba el color que está pisando el coche
             track_position_color = self.hitbox_surface.get_at((pixel_x, pixel_y))
@@ -207,27 +208,27 @@ class EntornoDef(gym.Env):
 
             if color_rgb == self.grass_color:
                 terminated = True
-                reward = -50.0
+                reward = -1.0
             else:
-                # COMRPOBAR CHECKPOINT
-                # Saca el punto objetivo en x,y
-                x_goal = self.track_center[self.current_checkpoint][0]
-                y_goal = self.track_center[self.current_checkpoint][1]
-                # Mide la distancia en línea recta (hipotenusa)
-                current_distance = math.hypot(self.x - x_goal, self.y - y_goal)
+                # # COMRPOBAR CHECKPOINT
+                # # Saca el punto objetivo en x,y
+                # x_goal = self.track_center[self.current_checkpoint][0]
+                # y_goal = self.track_center[self.current_checkpoint][1]
+                # # Mide la distancia en línea recta (hipotenusa)
+                # current_distance = math.hypot(self.x - x_goal, self.y - y_goal)
 
-                # Si la distancia es menor que la anterior se ha acercado (+) y le recompensamos por ello. Si no (-) le penalizamos
-                best_distance = self.previous_distance - current_distance
+                # # Si la distancia es menor que la anterior se ha acercado (+) y le recompensamos por ello. Si no (-) le penalizamos
+                # best_distance = self.previous_distance - current_distance
 
-                # Micro recompensa por avanzar
-                reward += best_distance * 0.5
+                # # Micro recompensa por avanzar
+                # reward += best_distance * 0.05
 
-                self.previous_distance = current_distance
+                # self.previous_distance = current_distance
 
-                if current_distance < 30.0: # por poner un margen. Realmente debería ser como la mitad del ancho que se establezca, pero de momento queda hardcodeado
-                    reward += 10.0 # se premia el avance
+                # if current_distance < 30.0: # por poner un margen. Realmente debería ser como la mitad del ancho que se establezca, pero de momento queda hardcodeado
+                #     reward += 2.0 # se premia el avance
                     
-                    self.current_checkpoint += 1 # se actualiza el objetivo
+                    # self.current_checkpoint += 1 # se actualiza el objetivo
                     self.inactivity_steps = 0
 
                     if self.current_checkpoint < self.num_checkpoints:
@@ -236,12 +237,12 @@ class EntornoDef(gym.Env):
                         self.previous_distance = math.hypot(self.x - new_x_goal, self.y - new_y_goal)
                     else:
                         terminated = True
-                        reward += 100.0 # mucha recompensa por completar el circuito
+                        reward += 10.0 # mucha recompensa por completar el circuito
                         print("Vuelta completada.")
                 
                 if self.inactivity_steps >= self.max_inactivity_steps:
                     truncated = True
-                    reward -= 100.0
+                    reward -= 1.0
 
         if self.render_mode == "human":
             self.render()

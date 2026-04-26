@@ -12,7 +12,7 @@ def main():
     env_ap = VecFrameStack(vec_env, n_stack = 4)
     env_final = VecTransposeImage(env_ap)
 
-    model_path = "./modelos/fase2_100k/best_model"
+    model_path = "./modelos/fase1.2/best_model"
     print(f"Cargando modelo desde: {model_path}.zip")
 
     try:

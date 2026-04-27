@@ -3,7 +3,7 @@ from stable_baselines3 import SAC, A2C
 from entorno_def import EntornoDef
 
 def main():
-    PHASE = "vectores/fase1.0.2_continuacion"
+    PHASE = "A2C_vectores/fase1.0.1"
 
     print("Iniciando entorno...")
     env = EntornoDef(render_mode = "human")
@@ -12,7 +12,8 @@ def main():
     print(f"Cargando modelo desde: {model_path}.zip")
 
     try:
-        model = SAC.load(model_path)
+        # model = SAC.load(model_path)
+        model = A2C.load(model_path)
     except FileNotFoundError:
         print("ERROR: Archivo no encontrado.")
 

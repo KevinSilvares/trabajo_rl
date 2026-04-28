@@ -4,6 +4,7 @@ env/
 venv/
 ENV/
 /env_gym
+/env-gym
 
 # Archivos temporales de Python
 __pycache__/

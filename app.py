@@ -15,17 +15,26 @@ if section == "Entrenamiento":
 
     col1, col2 = st.columns([3, 1])
 
-    with col1:
-        algorithm = st.selectbox("Algoritmo", ["SAC", "A2C"], help = "Algoritmo para entrenar.")
-        model_name = st.text_input(label = "Nombre para el algoritmo", max_chars = 30, help = "Al finalizar el entrenamiento se guardará un archivo con el nombre del algoritmo proporcionado.")
-        st.markdown(f"[Para saber más sobre {algorithm}](docs/{algorithm})")
+    # Tengo que hacer primero la columna 2 porque necesito la variable loaded_model para después
     with col2:
         # st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html = True) # Pequeño espacio y "regla" para alinear el botón con el selectbox
-        loaded_model = st.file_uploader("Cargar Modelo", help = "Sube un modelo ya entrenado para seguir entrenando o visualizarlo.", type = [".zip"])
+        loaded_model = st.file_uploader("Cargar Modelo", help = "Sube un modelo ya entrenado para seguir entrenando o visualizarlo.\nAl subir un modelo deberás configurar los parámetros para el nuevo entrenamiento.\n El tipo de algoritmo y el nombre se ajustarán directamente al del modelo.", type = [".zip"])
 
+        alg_name_index = 0
         if loaded_model is not None:
+            name_upper = loaded_model.name.upper()
+            default_name = loaded_model.name.replace(".zip", "")
+            
+            alg_name_index = 0 if "SAC" in name_upper else 1
+             
             if p.load_algorithm_to_ui(loaded_model):
                 st.success(f"Modelo {loaded_model.name} cargado.")
+    with col1:
+        algorithm = st.selectbox("Algoritmo", ["SAC", "A2C"], index = alg_name_index, help = "Algoritmo para entrenar.")
+        model_name = "" if not loaded_model else loaded_model.name.replace(".zip", "") 
+
+        st.text_input(label = "Nombre para el algoritmo", value = model_name, max_chars = 30, help = "Al finalizar el entrenamiento se guardará un archivo con el nombre del algoritmo proporcionado.")
+        st.markdown(f"[Para saber más sobre {algorithm}](docs/{algorithm})")
 
     st.markdown("---")
 
@@ -91,10 +100,12 @@ if section == "Entrenamiento":
         if not model_name:
             st.error("El nombre del modelo no puede estar vacío.")
         else:
+            loaded_model_path = None if not loaded_model else p.get_loaded_algorithm_path(loaded_model)
+
             if algorithm == "SAC":
-                p.train_SAC(model_name, track,  training_steps, learning_rate, buffer_size)
+                p.train_SAC(model_name, track,  training_steps, learning_rate, buffer_size, loaded_model_path)
             elif algorithm == "A2C":
-                p.train_A2C(model_name, track, training_steps, learning_rate, ent_coef, gamma)
+                p.train_A2C(model_name, track, training_steps, learning_rate, ent_coef, gamma, loaded_model_path) 
         
             st.success("Entrenamiento lanzado en segundo plano.")
 

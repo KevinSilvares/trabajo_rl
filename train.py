@@ -16,6 +16,7 @@ def main():
     parser.add_argument("--track", type = str, default = "oval", help = "Circuito para entrenar (oval o procedural).")
     parser.add_argument("--steps", type = int, default = 100000, help = "Pasos del entrenamiento.")
     parser.add_argument("--lr", type = float, default = 0.0003, help = "Tasa de aprendizaje.")
+    parser.add_argument("--load", type = str, default = None, help = "Ruta del archivo del algoritmo para continuar el entrenamiento.")
 
     # Argumentos SAC
     parser.add_argument("--buffer", type = int, default = 50000, help = "Tamaño del buffer de memoria a corto plazo de SAC.")
@@ -41,22 +42,42 @@ def main():
 
     print(f"Cargando algoritmo: {args.algorithm}")
     if args.algorithm == "SAC":
-        model = SAC(
-            "MlpPolicy",
-            env_monitorized,
-            learning_rate = args.lr,
-            buffer_size = args.buffer,
-            tensorboard_log = "./logs/tensorboard"
-        )
+        if args.load and os.path.exists(args.load):
+            print(f"Cargando modelo preentrenado desde: {args.load}")
+            model = SAC.load(
+                args.load, 
+                env = env_monitorized, 
+                learning_rate = args.lr, 
+                buffer_size = args.buffer
+            )
+        else:
+            model = SAC(
+                "MlpPolicy",
+                env_monitorized,
+                learning_rate = args.lr,
+                buffer_size = args.buffer,
+                tensorboard_log = "./logs/tensorboard"
+            )
+
     elif args.algorithm == "A2C":
-        model = A2C(
-            "MlpPolicy",
-            env_monitorized,
-            learning_rate = args.lr,
-            ent_coef = args.ent_coef,
-            gamma = args.gamma,
-            tensorboard_log = "./logs/tensorboard"
-        )
+        if args.load and os.path.exists(args.load):
+            print(f"Cargando modelo preentrenado desde: {args.load}")
+            model = A2C.load(
+                args.load,
+                env = env_monitorized,
+                learning_rate = args.lr,
+                ent_coef = args.ent_coef,
+                gamma = args.gamma   
+            )
+        else:
+            model = A2C(
+                "MlpPolicy",
+                env_monitorized,
+                learning_rate = args.lr,
+                ent_coef = args.ent_coef,
+                gamma = args.gamma,
+                tensorboard_log = "./logs/tensorboard"
+            )
     else:
         raise ValueError("Algoritmo no soportado. Sólo SAC o A2C.")
 

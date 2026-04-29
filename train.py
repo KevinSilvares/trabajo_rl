@@ -5,6 +5,7 @@ from stable_baselines3 import SAC, A2C
 from stable_baselines3.common.callbacks import EvalCallback
 from entorno_def import EntornoDef
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.logger import configure
 
 def main():
     print("Parseando argumentos.")
@@ -17,7 +18,7 @@ def main():
     parser.add_argument("--lr", type = float, default = 0.0003, help = "Tasa de aprendizaje.")
 
     # Argumentos SAC
-    parser.add_argument("--buffer", types = int, default = 50000, help = "Tamaño del buffer de memoria a corto plazo de SAC.")
+    parser.add_argument("--buffer", type = int, default = 50000, help = "Tamaño del buffer de memoria a corto plazo de SAC.")
 
     # Argumentos A2C
     parser.add_argument("--ent_coef", type = float, default = 0.01)
@@ -27,6 +28,7 @@ def main():
 
     print(f"Argumentos:\n {args}")
     
+    # Logs de tensorboard y carpeta de guardado del algoritmo
     os.makedirs("./logs/tensorboard", exist_ok = True)
     os.makedirs(f"./modelos/{args.algorithm}", exist_ok = True)
 
@@ -68,6 +70,13 @@ def main():
         render = False
     )
     
+    # Logs del algoritmo al monitor que usará streamlit para mostrar gráficas
+    st_logs_path = f"./streamlit/logs/{args.algorithm}_{args.name}"
+    os.makedirs(st_logs_path, exist_ok = True)
+    logger = configure(st_logs_path, ["stdout", "csv", "tensorboard"])
+
+    model.set_logger(logger)
+
     # Entrenar
     model.learn(total_timesteps = args.steps, callback = eval_callback, tb_log_name = f"{args.algorithm}_{args.name}", reset_num_timesteps = False)
 

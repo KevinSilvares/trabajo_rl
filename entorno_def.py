@@ -21,10 +21,12 @@ class EntornoDef(gym.Env):
         "render_fps": 30
     }
 
-    def __init__(self, render_mode = None):
+    def __init__(self, render_mode = None, track_type = "oval"):
         super().__init__()
         self.max_inactivity_steps = 100
         self.inactivity_steps = 0
+
+        self.track_type = track_type
 
         # ACCIONES: Volante y Pedales
         # Ambos controlen van desde el -1.0 al 1.0
@@ -97,8 +99,10 @@ class EntornoDef(gym.Env):
 
         screen_center = self.window_size // 2
 
-        self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
-        # self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(self.window_size)
+        if self.track_type == "oval":
+            self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(self.window_size)
+        elif self.track_type == "procedural":
+            self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
 
         # Coloca el pisto en la salida (El punto 0 de la pista)
         self.x = self.track_center[0][0]

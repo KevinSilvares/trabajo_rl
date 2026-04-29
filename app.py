@@ -1,5 +1,8 @@
+import os
 import streamlit as st
 import processes as p
+import pandas as pd
+import time
 
 # SIDEBAR
 st.sidebar.title("Coche con Reinforcement Learning")
@@ -85,11 +88,54 @@ if section == "Entrenamiento":
         )
 
     if st.button("Comenzar entrenamiento"):
-        if algorithm == "SAC":
-            p.train_SAC(track, training_steps, learning_rate, buffer_size)
-        elif algorithm == "A2C":
-            p.train_A2C(track, training_steps, learning_rate, ent_coef, gamma)
+        if not model_name:
+            st.error("El nombre del modelo no puede estar vacío.")
+        else:
+            if algorithm == "SAC":
+                p.train_SAC(model_name, track,  training_steps, learning_rate, buffer_size)
+            elif algorithm == "A2C":
+                p.train_A2C(model_name, track, training_steps, learning_rate, ent_coef, gamma)
+        
+            st.success("Entrenamiento lanzado en segundo plano.")
 
-    performance_graph = st.empty()
+            # Monitorización
+            st.markdown("---")
+            st.markdown("Rendimiento en Tiempo Real")
+            col_rew, col_ent, col_steps = st.columns(3)
+
+            with col_rew:
+                st.markdown("#### Reward (recompensa)")
+                plot_reward = st.empty()
+
+            with col_ent:
+                st.markdown("#### Entropía")
+                plot_entropy = st.empty()
+            
+            with col_steps:
+                st.markdown("#### Pasos por episodio")
+                plot_steps = st.empty()
+
+            csv_path = f"./streamlit/logs/{algorithm}_{model_name}/progress.csv"
+
+            while True:
+                try:
+                    if os.path.exists(csv_path):
+                        df = pd.read_csv(csv_path)
+
+                        if "rollout/ep_rew_mean" in df.columns:
+                            plot_reward.line_chart(df["rollout/ep_rew_mean"].dropna())
+                        if "rollout/ep_len_mean" in df.columns:
+                            plot_steps.line_chart(df["rollout/ep_len_mean"].dropna())
+                        
+                        # En SAC es train/ent_coef. En A2C es train/entropy_loss
+                        col_ent = "train/ent_coef" if algorithm == "SAC" else "train/entropy_loss"
+                        if col_ent in df.columns:
+                            plot_entropy.line_chart(df[col_ent].dropna()) 
+                    
+                    time.sleep(5)
+                except Exception as e:
+                    # Evita que se escriba y se lea al mismo tiempo. Hacía que petase
+                    time.sleep(1)
+
 elif section == "Visualización":
     st.title("Visualización")

@@ -13,3 +13,6 @@ __pycache__/
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+
+# Archivos temporales
+/temp_modelos

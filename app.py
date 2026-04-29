@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import processes as p
 
@@ -18,16 +17,11 @@ if section == "Entrenamiento":
         model_name = st.text_input(label = "Nombre para el algoritmo", max_chars = 30, help = "Al finalizar el entrenamiento se guardará un archivo con el nombre del algoritmo proporcionado.")
         st.markdown(f"[Para saber más sobre {algorithm}](docs/{algorithm})")
     with col2:
-        models_path = "./modelos/"
-        os.makedirs(models_path, exist_ok = True)
-
         # st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html = True) # Pequeño espacio y "regla" para alinear el botón con el selectbox
         loaded_model = st.file_uploader("Cargar Modelo", help = "Sube un modelo ya entrenado para seguir entrenando o visualizarlo.", type = [".zip"])
 
         if loaded_model is not None:
-            file_path = os.path.join(models_path, loaded_model.name)
-
-            if p.load_algorithm_to_ui(file_path):
+            if p.load_algorithm_to_ui(loaded_model):
                 st.success(f"Modelo {loaded_model.name} cargado.")
 
     st.markdown("---")
@@ -39,6 +33,7 @@ if section == "Entrenamiento":
     if algorithm == "SAC":
         training_steps = st.number_input(
             "Training Steps (Pasos de Entrenamiento)",
+            min_value = 5000,
             value = 200000,
             step = 1000,
             help = "Cuantas iteraciones va a realizar el modelo para entrenarse. Para SAC 200.000 es un buen punto de partida."
@@ -60,6 +55,7 @@ if section == "Entrenamiento":
     elif algorithm == "A2C":
         training_steps = st.number_input(
             "Training Steps (Pasos de Entrenamiento)",
+            min_value = 5000,
             value = 500000,
             step = 1000,
             help = "Cuantas iteraciones va a realizar el modelo para entrenarse. Para A2C 500.000 es un buen punto de partida."

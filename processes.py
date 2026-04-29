@@ -2,11 +2,12 @@ import os
 import subprocess
 import sys
 
-def train_SAC(track = "Óvalo", steps = 200000, learning_rate = 0.0003, buffer_size = 50000):
+def train_SAC(name, track = "Óvalo", steps = 200000, learning_rate = 0.0003, buffer_size = 50000):
     track_type = "oval" if track == "Óvalo" else "procedural" # más fácil de leer y escribir en código
 
     command = [
         sys.executable, "train.py",
+        "--name", name,
         "--algorithm", "SAC",
         "--track", track_type,
         "--steps", str(steps),
@@ -18,11 +19,12 @@ def train_SAC(track = "Óvalo", steps = 200000, learning_rate = 0.0003, buffer_s
     subprocess.Popen(command)
     return True
 
-def train_A2C(track = "Óvalo", steps = 500000, learning_rate = 0.0005, ent_coef = 0.1, gamma = 0.80):
+def train_A2C(name, track = "Óvalo", steps = 500000, learning_rate = 0.0005, ent_coef = 0.1, gamma = 0.80):
     track_type = "oval" if track == "Óvalo" else "procedural" # más fácil de leer y escribir en código
 
     command = [
         sys.executable, "train.py",
+        "--name", name,
         "--algorithm", "A2C",
         "--track", track_type,
         "--steps", str(steps),

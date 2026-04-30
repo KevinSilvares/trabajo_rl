@@ -150,3 +150,15 @@ if section == "Entrenamiento":
 
 elif section == "Visualización":
     st.title("Visualización")
+
+    visualization_track = st.radio("Circuito:", ["Óvalo", "Procedimental"], help = "Circuito en el que se visualizará el modelo.\n - El óvalo es siempre estático y mucho más sencillo. \n - Los procededimentales son siempre aleatorios. Ofrecen una visión general del rendimiento del algoritmo.")
+
+    visualization_loaded_model = st.file_uploader("Cargar Modelo", help = "Sube un modelo ya entrenado para ver su comportamiento.", type = [".zip"])
+    if visualization_loaded_model is not None:
+        if p.load_algorithm_to_ui(visualization_loaded_model):
+            st.success(f"Modelo {visualization_loaded_model.name} cargado.")
+
+            if st.button("Lanzar visualización"):
+                if p.handle_visualization(visualization_loaded_model.name, visualization_track):
+                    st.success("Lanzando visualización. Esto puede tardar unos segundos.")
+                

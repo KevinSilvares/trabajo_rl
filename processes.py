@@ -45,8 +45,19 @@ def train_A2C(name, track = "Óvalo", steps = 500000, learning_rate = 0.0005, en
     subprocess.Popen(command)
     return True
     
-def handle_visualization(model):
-    pass
+def handle_visualization(model, visualization_track):
+    vis_track = "oval" if visualization_track == "Óvalo" else "procedural"
+    model_path = os.path.join(TEMP_MODELS_PATH, model)
+
+    command = [
+        sys.executable, "play.py",
+        "--model", model_path,
+        "--track", vis_track
+    ]
+
+    print("Lanzando ventana de visualización")
+    subprocess.Popen(command)
+    return True
 
 def load_algorithm_to_ui(model):
     os.makedirs(TEMP_MODELS_PATH, exist_ok = True)

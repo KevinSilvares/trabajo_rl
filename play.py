@@ -15,7 +15,7 @@ def main():
     env = EntornoDef(render_mode = "human", track_type = args.track)
 
     model_path = args.model
-    print(f"Cargando modelo desde: {model_path}.zip")
+    print(f"Cargando modelo desde: {model_path}")
 
     try:
         model = SAC.load(model_path)

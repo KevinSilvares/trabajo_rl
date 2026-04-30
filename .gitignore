@@ -4,6 +4,7 @@ env/
 venv/
 ENV/
 /env_gym
+/env-gym
 
 # Archivos temporales de Python
 __pycache__/
@@ -12,3 +13,6 @@ __pycache__/
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+
+# Archivos temporales
+/temp_modelos

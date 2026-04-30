@@ -21,10 +21,12 @@ class EntornoDef(gym.Env):
         "render_fps": 30
     }
 
-    def __init__(self, render_mode = None):
+    def __init__(self, render_mode = None, track_type = "oval"):
         super().__init__()
         self.max_inactivity_steps = 100
         self.inactivity_steps = 0
+
+        self.track_type = track_type
 
         # ACCIONES: Volante y Pedales
         # Ambos controlen van desde el -1.0 al 1.0
@@ -97,8 +99,12 @@ class EntornoDef(gym.Env):
 
         screen_center = self.window_size // 2
 
-        self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
-        # self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(self.window_size)
+        if self.track_type == "oval":
+            self.track_center, self.track_interior, self.track_exterior = generate_perfect_oval(self.window_size)
+        elif self.track_type == "procedural":
+            self.track_center, self.track_interior, self.track_exterior = generate_valid_track(screen_center, screen_center)
+        else:
+            print(f"No se reconoce '{self.track_type}' como una pista válida. Prueba: 'oval' ó 'procedural'.")
 
         # Coloca el pisto en la salida (El punto 0 de la pista)
         self.x = self.track_center[0][0]
@@ -242,15 +248,15 @@ class EntornoDef(gym.Env):
             pygame.draw.lines(self.window, (255, 255, 255), True, self.track_exterior, 3)
 
         # # VISUALIZACIÓN CHECKPOINT
-        #     if hasattr(self, "current_checkpoint") and self.current_checkpoint < len(self.track_center):
-        #         target_x = self.track_center[self.current_checkpoint][0]
-        #         target_y = self.track_center[self.current_checkpoint][1]
+            # if hasattr(self, "current_checkpoint") and self.current_checkpoint < len(self.track_center):
+            #     target_x = self.track_center[self.current_checkpoint][0]
+            #     target_y = self.track_center[self.current_checkpoint][1]
                 
-        #         # Dibuja un punto azul en el checkpoint actual
-        #         pygame.draw.circle(self.window, (0, 191, 255), (int(target_x), int(target_y)), 8)
+            #     # Dibuja un punto azul en el checkpoint actual
+            #     pygame.draw.circle(self.window, (0, 191, 255), (int(target_x), int(target_y)), 8)
                 
-        #         # Dibuja una línea desde el coche hasta el checkpoint
-        #         pygame.draw.line(self.window, (0, 191, 255), (int(self.x), int(self.y)), (int(target_x), int(target_y)), 2)
+            #     # Dibuja una línea desde el coche hasta el checkpoint
+            #     pygame.draw.line(self.window, (0, 191, 255), (int(self.x), int(self.y)), (int(target_x), int(target_y)), 2)
 
         # # DEBUG RADIO MATEMÁTICO
         #     track_radius = 30.0

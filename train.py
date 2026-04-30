@@ -1,55 +1,114 @@
 import os
+import argparse
 import gymnasium as gym
 from stable_baselines3 import SAC, A2C
 from stable_baselines3.common.callbacks import EvalCallback
 from entorno_def import EntornoDef
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.logger import configure
 
 def main():
-    PHASE = "vectores/fase1.0.1"
-    TRAINING_STEPS = 500000
+    print("Parseando argumentos.")
+    # Argumentos comunes
+    parser = argparse.ArgumentParser(description = "Entrenamiento de algoritmo")
+    parser.add_argument("--name", type = str, required = True, help = "Nombre de archivo de salida.")
+    parser.add_argument("--algorithm", type = str, required = True, help = "Algoritmo a utilizar (SAC o A2C).")
+    parser.add_argument("--track", type = str, default = "oval", help = "Circuito para entrenar (oval o procedural).")
+    parser.add_argument("--steps", type = int, default = 100000, help = "Pasos del entrenamiento.")
+    parser.add_argument("--lr", type = float, default = 0.0003, help = "Tasa de aprendizaje.")
+    parser.add_argument("--load", type = str, default = None, help = "Ruta del archivo del algoritmo para continuar el entrenamiento.")
 
+    # Argumentos SAC
+    parser.add_argument("--buffer", type = int, default = 50000, help = "Tamaño del buffer de memoria a corto plazo de SAC.")
+
+    # Argumentos A2C
+    parser.add_argument("--ent_coef", type = float, default = 0.01)
+    parser.add_argument("--gamma", type = float, default = 0.90)
+
+    args = parser.parse_args()
+
+    print(f"Argumentos:\n {args}")
+    
+    # Logs de tensorboard y carpeta de guardado del algoritmo
     os.makedirs("./logs/tensorboard", exist_ok = True)
-    os.makedirs(f"./modelos/{PHASE}", exist_ok = True)
+    os.makedirs(f"./modelos/{args.algorithm}", exist_ok = True)
 
-    env = EntornoDef(render_mode = None)
+    print("Creando entorno.")
+    env = EntornoDef(render_mode = None, track_type = args.track)
     env_monitorized = Monitor(env)
 
-    eval_env = EntornoDef(render_mode = None)
+    eval_env = EntornoDef(render_mode = None, track_type = args.track)
     eval_env_monitorized = Monitor(eval_env)
 
-    ALGORITHM = "A2C" # Modificable a "A2C"
-    print(f"Cargando: {ALGORITHM}")
+    print(f"Cargando algoritmo: {args.algorithm}")
+    if args.algorithm == "SAC":
+        if args.load and os.path.exists(args.load):
+            print(f"Cargando modelo preentrenado desde: {args.load}")
+            model = SAC.load(
+                args.load, 
+                env = env_monitorized, 
+                learning_rate = args.lr, 
+                buffer_size = args.buffer
+            )
+        else:
+            model = SAC(
+                "MlpPolicy",
+                env_monitorized,
+                learning_rate = args.lr,
+                buffer_size = args.buffer,
+                tensorboard_log = "./logs/tensorboard"
+            )
+
+    elif args.algorithm == "A2C":
+        if args.load and os.path.exists(args.load):
+            print(f"Cargando modelo preentrenado desde: {args.load}")
+            model = A2C.load(
+                args.load,
+                env = env_monitorized,
+                learning_rate = args.lr,
+                ent_coef = args.ent_coef,
+                gamma = args.gamma   
+            )
+        else:
+            model = A2C(
+                "MlpPolicy",
+                env_monitorized,
+                learning_rate = args.lr,
+                ent_coef = args.ent_coef,
+                gamma = args.gamma,
+                tensorboard_log = "./logs/tensorboard"
+            )
+    else:
+        raise ValueError("Algoritmo no soportado. Sólo SAC o A2C.")
 
     # Comprueba el rendimiento del modelo e irá guardando el mejor
     eval_callback = EvalCallback(
         eval_env_monitorized,
-        best_model_save_path = f"./modelos/{ALGORITHM}_{PHASE}",
-        log_path = f"./logs/{ALGORITHM}_{PHASE}",
+        best_model_save_path = f"./modelos/{args.algorithm}_{args.name}",
+        log_path = f"./logs/{args.algorithm}_{args.name}",
         eval_freq = 5000,
         deterministic = True,
         render = False
     )
-
-    # Hay que especificarle al algoritmo que usará parámetros de estado (vectores). Se define una política (MlpPolicy)
-    if ALGORITHM == "SAC":
-        # model = SAC("MlpPolicy", env_monitorized, buffer_size = 50000, verbose = 1, tensorboard_log = "./logs/tensorboard/")
-        model = SAC.load("./modelos/vectores/fase1.0.1/best_model", env = env_monitorized, tensorboard_logs = "./logs/tensorboard")
-    elif ALGORITHM == "A2C":
-        model = A2C("MlpPolicy", env_monitorized, verbose = 1, learning_rate = 0.0005, ent_coef = 0.01, gamma = 0.99, tensorboard_log = "./logs/tensorboard")
-    else:
-        raise ValueError("Algoritmo no soportado.")
     
+    # Logs del algoritmo al monitor que usará streamlit para mostrar gráficas
+    st_logs_path = f"./streamlit/logs/{args.algorithm}_{args.name}"
+    os.makedirs(st_logs_path, exist_ok = True)
+    logger = configure(st_logs_path, ["stdout", "csv", "tensorboard"])
+
+    model.set_logger(logger)
+
     # Entrenar
-    model.learn(total_timesteps = TRAINING_STEPS, callback = eval_callback, tb_log_name = f"{ALGORITHM}{PHASE}", reset_num_timesteps = False)
+    model.learn(total_timesteps = args.steps, callback = eval_callback, tb_log_name = f"{args.algorithm}_{args.name}", reset_num_timesteps = False)
 
     # Guardar resultados
-    file_path = f"model_{ALGORITHM}_{PHASE}"
+    file_path = f"./modelos/final_{args.algorithm}_{args.name}"
     model.save(file_path)
 
     print(f"Entrenamiento finalizado. Modelo guardado correctametne como {file_path}.zip")
 
     env.close()
+    eval_env.close()
 
 if __name__ == "__main__":
     main()

@@ -75,3 +75,8 @@ Para cerrar la aplicación correctamente se recomienda acabar con el proceso con
 - El entrenamiento irá guardando paulatinamente el mejor modelo entrenado hasta ese momento y lo guardará en el directorio `./modelos/{NombreAlgoritmo}_{Nombre}/best_model.zip`. Ej: `/modelos/SAC_MiAlgoritmo/best_model.zip`
 - Al finalizar el entrenamiento el modelo final se guardará en el directorio `./modelos/final_{NombreAlgoritmo}_{Nombre}.zip`. Ej: `./modelos/final_SAC_MiAlgoritmo.zip`.
     **Este modelo no tiene por qué ser mejor que el almacenado en best_model.zip**
+- Los logs se almacenan en el directorio `./logs/tensorboard` principalmente para poder visualizarlos desde `Tensorboard`. Aunque los algoritmos fallidos han sido eliminados de la estructura del proyecto, los logs pueden ser consultados en todo momento en dicha aplicación:
+```bash
+tensorboard --logdir ./logs/tensorboard
+```
+- Los logs utilizados para mostrar en la interfaz gráficas se almacenan `./streamlit/logs/{Nombre}`.

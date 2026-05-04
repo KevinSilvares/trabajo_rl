@@ -114,17 +114,14 @@ if section == "Entrenamiento":
             st.markdown("Rendimiento en Tiempo Real")
             col_rew, col_ent, col_steps = st.columns(3)
 
-            with col_rew:
-                st.markdown("#### Reward (recompensa)")
-                plot_reward = st.empty()
+            st.markdown("#### Reward (recompensa)")
+            plot_reward = st.empty()
 
-            with col_ent:
-                st.markdown("#### Entropía")
-                plot_entropy = st.empty()
+            st.markdown("#### Entropía")
+            plot_entropy = st.empty()
             
-            with col_steps:
-                st.markdown("#### Pasos por episodio")
-                plot_steps = st.empty()
+            st.markdown("#### Pasos por episodio")
+            plot_steps = st.empty()
 
             csv_path = f"./streamlit/logs/{algorithm}_{model_name}/progress.csv"
 

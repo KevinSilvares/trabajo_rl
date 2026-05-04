@@ -542,3 +542,17 @@ Entrenar con imágenes fue la idea principal, tanto por la fascinación que supo
 Aún queda la espinita clavada de no haberlo conseguido y seguramente sigamos explorándolo cuando tengamos más tiempo y/o mejores recursos. El paper de Simeet Nayan mencionado en el punto 3.1.-Usando Imágenes y CNN, es sumamente interesante y aporta claves bastante importantes para la consecución de este objetivo.
 
 Así que si hay un cambio que pide a gritos este proyecto es exactamente ese.
+
+## Bibliografía
+
+- ChrisPHP. (s.f.). ProceduralRacetrack [Software de computadora]. GitHub. Recuperado el 12 de abril de 2026, de https://github.com/ChrisPHP/ProceduralRacetrack
+- Chris_PHP. (2024, 1 de marzo). How to create procedural racetrack for your game! [Video]. YouTube. Recuperado el 12 de abril de 2026, de https://youtu.be/BTfghIWZFMw
+- Farama Foundation. (s.f.). Car Racing. Gymnasium. Recuperado el 10 de abril de 2026, de https://gymnasium.farama.org/environments/box2d/car_racing/
+- Finding Theta. (2024, 1 de septiembre). Solving Gymnasium's Car Racing with Reinforcement Learning. Recuperado el 10 de abril de 2026, de https://www.findingtheta.com/es/blog/solving-gymnasiums-car-racing-with-reinforcement-learning
+- Nayan, S. (2025, 23 de abril). Training an Agent to Play Breakout using Deep Reinforcement Learning. Medium. Recuperado el 16 de abril de 2026, de https://medium.com/@simeetnayan81/training-an-agent-to-play-breakout-using-deep-reinforcement-learning-b5ca02c81182
+- Pygame. (s.f.). Pygame Documentation. Recuperado en 2026, de https://www.pygame.org/docs/
+- Stable Baselines3 A2C. (s.f.-a). A2C. Recuperado el 13 de abril de 2026, de https://stable-baselines3.readthedocs.io/en/master/modules/a2c.html
+- Stable Baselines3 MonitorWrapper. (s.f.-b). Monitor. Recuperado el 15 de abril de 2026, de https://stable-baselines3.readthedocs.io/en/master/common/monitor.html
+- Stable Baselines3 SAC. (s.f.-c). SAC. Recuperado el 13 de abril de 2026, de https://stable-baselines3.readthedocs.io/en/master/modules/sac.html
+- Stable Baselines3 General. (s.f.-d). Stable Baselines3 documentation. Recuperado el 13 de abril de 2026, de https://stable-baselines3.readthedocs.io/en/master/
+- Streamlit. (s.f.). Streamlit. Recuperado el 20 de abril de 2026, de https://streamlit.io/

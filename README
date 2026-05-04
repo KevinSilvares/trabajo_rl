@@ -4,6 +4,12 @@ Proyecto realizado por Kevin Silvares Carbonell y Mario Merayo Barredo.
 
 Este proyecto es el desarrollo de un agente entrenado mediante Reinforcement Learning (Aprendizaje por Refuerzo) que simula ser un coche aprendiendo a navegar por distintos circuitos.
 
+## Documentación
+
+- [Documentación](https://kevinsilvares.github.io/trabajo_rl/)
+- [Anexo: Uso de Interfaz](https://kevinsilvares.github.io/trabajo_rl/uso-interfaz/Anexo_Uso_de_Interfaz.html)
+- En caso de fallo de red se encuentran en formato `markdown` en el directorio `docs`.
+
 ## Guía de Instalación y Ejecución
 
 Para garantizar que el proyecto funcione correctamente sin crear conflictos con otras librerías del sistema, se recomienda encarecidamente utilizar un entorno virtual de python.

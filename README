@@ -80,3 +80,4 @@ Para cerrar la aplicación correctamente se recomienda acabar con el proceso con
 tensorboard --logdir ./logs/tensorboard
 ```
 - Los logs utilizados para mostrar en la interfaz gráficas se almacenan `./streamlit/logs/{Nombre}`.
+- Se han proporcionado unos videos de ejemplo para la demostración del funcionamiento en caso de fallo. Están ubicados en el directorio `videos-ejemplo`.

@@ -33,7 +33,7 @@ if section == "Entrenamiento":
         algorithm = st.selectbox("Algoritmo", ["SAC", "A2C"], index = alg_name_index, help = "Algoritmo para entrenar.")
         model_name = "" if not loaded_model else loaded_model.name.replace(".zip", "") 
 
-        st.text_input(label = "Nombre para el algoritmo", value = model_name, max_chars = 30, help = "Al finalizar el entrenamiento se guardará un archivo con el nombre del algoritmo proporcionado.")
+        model_name_input = st.text_input(label = "Nombre para el algoritmo", value = model_name, max_chars = 30, help = "Al finalizar el entrenamiento se guardará un archivo con el nombre del algoritmo proporcionado.")
         st.markdown(f"[Para saber más sobre {algorithm}](https://kevinsilvares.github.io/trabajo_rl/#23--algoritmos)")
 
     st.markdown("---")
@@ -97,7 +97,7 @@ if section == "Entrenamiento":
         )
 
     if st.button("Comenzar entrenamiento"):
-        if not model_name:
+        if not model_name_input:
             st.error("El nombre del modelo no puede estar vacío.")
         else:
             loaded_model_path = None if not loaded_model else p.get_loaded_algorithm_path(loaded_model)

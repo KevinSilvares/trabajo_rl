@@ -44,7 +44,7 @@ Los objetivos específicos son:
 
 - **Desarrollo de un entorno personalizado:** Crear una simulación compatible con el estándar Gymnasium que presente retos de dificultad progresiva (técnica conocida como Curriculum Learning).
 - **Optimización del Agente:** Implementar, entrenar y ajustar algoritmos como SAC (Soft Actor-Critic) y A2C para lograr una conducción fluida y eficiente en circuitos no vistos anteriormente (demostrando una correcta generalización del modelo).
-- **Interfaz visual e interactiva**: Desarrollar una interfaz gráfica que permita a cualquier usuario manejar el proyecto, lanzar entrenamientos y visualizar los resultados de forma intuitiva, sin necesidad de interactuar directamente con la consola de comandos ni modificar código fuente en Python. (Aunque figure como objetivo del proyecto no se comentará nada de este apartado en esta documentación, pues su contenido sería escaso y poco relevante con lo aquí descrito. Es por ello que lo referente al uso de esta interfaz se encuentra en Anexo: Uso de Interfaz).
+- **Interfaz visual e interactiva**: Desarrollar una interfaz gráfica que permita a cualquier usuario manejar el proyecto, lanzar entrenamientos y visualizar los resultados de forma intuitiva, sin necesidad de interactuar directamente con la consola de comandos ni modificar código fuente en Python. (Aunque figure como objetivo del proyecto no se comentará nada de este apartado en esta documentación, pues su contenido sería escaso y poco relevante con lo aquí descrito. Es por ello que lo referente al uso de esta interfaz se encuentra en [Anexo: Uso de Interfaz](./uso-interfaz/Anexo_Uso_de_Interfaz.md)).
 
 ## 1.2.- Tecnologías usadas
 

@@ -1,0 +1,75 @@
+# Proyecto de Conducción Autónoma con Reinforcement Learning
+
+Proyecto realizado por Kevin Silvares Carbonell y Mario Merayo Barredo.
+
+Este proyecto es el desarrollo de un agente entrenado mediante Reinforcement Learning (Aprendizaje por Refuerzo) que simula ser un coche aprendiendo a navegar por distintos circuitos.
+
+## Guía de Instalación y Ejecución
+
+Para garantizar que el proyecto funcione correctamente sin crear conflictos con otras librerías del sistema, se recomienda encarecidamente utilizar un entorno virtual de python.
+
+### 1.- Requisitos Previos
+**Python 3.11 o 3.12** (versiones estables recomendadas para Machine Learning y utilizadas en todo el desarrollo de este proyecto).
+
+**Python 3.14** genera problemas.
+
+Para comprobar la versión de Python del sistema:
+
+```bash
+python --version
+```
+
+### 2.- Clonar el repositorio
+Abre tu terminal y navega hasta la carpeta donde quieras guardar el proyecto:
+```bash
+git clone https://github.com/KevinSilvares/trabajo_rl
+cd trabajo_rl
+```
+
+### 3.- Creación de un Entorno Virtual de Python, Activación e Instalación de dependencias
+
+- Para crear el entorno virtual de Python navegar hasta la carpeta donde se ubique el proyecto:
+```bash
+python -m venv .env
+```
+
+- Activar el entorno:
+
+    -   Windows:
+    ```bash
+    .env\Scripts\activate
+    ```
+
+    - Linux:
+    ```bash
+    source .env/bin/activate
+    ```
+
+- Instalar dependencias:
+
+```bash
+pip install -r requirements.txt
+```
+
+*Es posible que haya conflicto con algunas librerías si no se cuenta con un compilador de C++. En ese caso, se recomienda instalar manualmente la librería que dé error con `pip install <libreria>`.*
+
+### 4.- Lanzar Aplicación
+
+Ubicar la terminal en la raíz del proyecto:
+
+```bash
+streamlit run app.py
+```
+
+Si pregunta por el correo dejar en blanco (lo hace la primera vez). Lanzará una pestaña del navegador con la interfaz visual.
+
+## A tener en cuenta
+
+- Los modelos entrenados como ejemplo son SAC y A2C y se encuentran en el directorio `modelos_ejemplo`. Ambos han sido entrenados con el mismo número de pasos (1 millón) por motivos de comparación de rendimientos:
+    - SAC: Es el más fiable y completa los circuitos sin problemas.
+    - A2C: Es menos fiable. Rara vez completa la totalidad de los circuitos, aunque es capaz de navegar por las pistas.
+- La aplicación lanza subprocesos para realizar entrenamientos y visualizaciones con comentarios visibles en la terminal.
+- Si se desea parar un entrenamiento es necesario parar el proceso desde la Terminal con `Ctrl + C`. El prototipo de aplicación actual no cuenta con un botón de parada.
+- El entrenamiento irá guardando paulatinamente el mejor modelo entrenado hasta ese momento y lo guardará en el directorio `./modelos/{NombreAlgoritmo}_{Nombre}/best_model.zip`. Ej: `/modelos/SAC_MiAlgoritmo/best_model.zip`
+- Al finalizar el entrenamiento el modelo final se guardará en el directorio `./modelos/final_{NombreAlgoritmo}_{Nombre}.zip`. Ej: `./modelos/final_SAC_MiAlgoritmo.zip`.
+    **Este modelo no tiene por qué ser mejor que el almacenado en best_model.zip**

@@ -34,7 +34,7 @@ if section == "Entrenamiento":
         model_name = "" if not loaded_model else loaded_model.name.replace(".zip", "") 
 
         st.text_input(label = "Nombre para el algoritmo", value = model_name, max_chars = 30, help = "Al finalizar el entrenamiento se guardará un archivo con el nombre del algoritmo proporcionado.")
-        st.markdown(f"[Para saber más sobre {algorithm}](docs/{algorithm})")
+        st.markdown(f"[Para saber más sobre {algorithm}](https://kevinsilvares.github.io/trabajo_rl/#23--algoritmos)")
 
     st.markdown("---")
 

@@ -63,6 +63,8 @@ streamlit run app.py
 
 Si pregunta por el correo dejar en blanco (lo hace la primera vez). Lanzará una pestaña del navegador con la interfaz visual.
 
+Para cerrar la aplicación correctamente se recomienda acabar con el proceso con `Ctrl + C` en la Terminal.
+
 ## A tener en cuenta
 
 - Los modelos entrenados como ejemplo son SAC y A2C y se encuentran en el directorio `modelos_ejemplo`. Ambos han sido entrenados con el mismo número de pasos (1 millón) por motivos de comparación de rendimientos:

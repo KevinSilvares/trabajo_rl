@@ -19,6 +19,8 @@ def main():
 
     try:
         model = SAC.load(model_path)
+    except AttributeError:
+        model = A2C.load(model_path)
     except ValueError:
         model = A2C.load(model_path)
     except FileNotFoundError:
